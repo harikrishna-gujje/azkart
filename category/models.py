@@ -14,5 +14,6 @@ class Category(models.Model):
 
     def geturl(self):
         return reverse('products_by_category', kwargs={'category_slug_parameter': self.slug})
+
     def __str__(self):
         return self.category_name
