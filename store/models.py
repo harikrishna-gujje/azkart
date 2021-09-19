@@ -27,3 +27,25 @@ class Product(models.Model):
             'category_slug_parameter': self.product_category.slug,
             'product_slug_parameter': self.product_slug
         })
+
+variation_categories = (
+    ('color', 'Color'),
+    ('size', 'Size'),
+)
+
+class Variation(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    variation_category = models.CharField(max_length=255, choices=variation_categories)
+    variation_value = models.CharField(max_length=255)
+    is_available = models.BooleanField(default=True)
+    created_date = models.DateTimeField(auto_now=True)
+
+    class Meta():
+        verbose_name = 'Variation'
+        verbose_name_plural = 'Variations'
+
+    def __unicode__(self):
+        return self.product
+
+    def get_values_for_category(self, category):
+        return self.variation_category == category

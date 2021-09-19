@@ -35,7 +35,6 @@ class AccountManager(BaseUserManager):
         return user
 
 
-
 class Account(AbstractBaseUser):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)

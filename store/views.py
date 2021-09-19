@@ -1,6 +1,9 @@
 from django.shortcuts import render, get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponse
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db.models import Q
+
 
 from .models import Product
 from category.models import Category
@@ -52,11 +55,30 @@ def product_detail(request, category_slug_parameter=None, product_slug_parameter
         raise e
     # checking whether the product is added to cart or not
     product = get_object_or_404(Product, product_slug=product_slug_parameter)
-    cart = Cart.objects.get(cart_id=_get_session_id(request))
     try:
+        cart = Cart.objects.get(cart_id=_get_session_id(request))
         cart_item = CartItem.objects.get(product=product, cart=cart)
         context['is_in_cart'] = True
     except ObjectDoesNotExist:
         context['is_in_cart'] = False
 
     return render(request, 'store/product_detail.html', context)
+
+
+def search(request):
+
+    context = dict()
+
+    if 'q' in request.GET:
+        query = request.GET.get('q')
+        if query:
+            products = Product.objects.filter(Q(product_name__icontains=query) |
+                                              Q(product_desc__icontains=query)).order_by('product_name')
+            products_count = products.count()
+
+            context = {
+                'products': products,
+                'products_count': products_count
+            }
+
+    return render(request, 'store/store.html', context)
