@@ -28,10 +28,21 @@ class Product(models.Model):
             'product_slug_parameter': self.product_slug
         })
 
+
+class VariationManager(models.Manager):
+
+    def size(self):
+        return super(models.Manager, self).filter(variation_category='size')  # argument 1 for super must be type so,
+        # sent models.manager insted of VariationManager
+
+    def color(self):
+        return super(models.Manager, self).filter(variation_category='color')
+
 variation_categories = (
     ('color', 'Color'),
     ('size', 'Size'),
 )
+
 
 class Variation(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -40,12 +51,11 @@ class Variation(models.Model):
     is_available = models.BooleanField(default=True)
     created_date = models.DateTimeField(auto_now=True)
 
+    objects = VariationManager()
+
     class Meta():
         verbose_name = 'Variation'
         verbose_name_plural = 'Variations'
 
-    def __unicode__(self):
-        return self.product
-
-    def get_values_for_category(self, category):
-        return self.variation_category == category
+    def __str__(self):
+        return self.variation_value

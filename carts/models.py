@@ -1,5 +1,5 @@
 from django.db import models
-from store.models import Product
+from store.models import Product, Variation
 
 # Create your models here.
 
@@ -13,7 +13,9 @@ class Cart(models.Model):
 
 class CartItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    variations_for_product = models.ManyToManyField(Variation, blank=True)  # same product can be added with diff
+    # variation to cartitem
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)  # Foreign key can be one to one or one to many field
     quantity = models.IntegerField()
     is_active = models.BooleanField(default=True)
 
@@ -21,4 +23,4 @@ class CartItem(models.Model):
         return self.product.price * self.quantity
 
     def __str__(self):
-        return self.product
+        return self.product.product_name
