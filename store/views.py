@@ -56,11 +56,13 @@ def product_detail(request, category_slug_parameter=None, product_slug_parameter
     # checking whether the product is added to cart or not
     product = get_object_or_404(Product, product_slug=product_slug_parameter)
     try:
-        cart = Cart.objects.get(cart_id=_get_session_id(request))
-        cart_item = CartItem.objects.get(product=product, cart=cart)
-        context['is_in_cart'] = True
-    except ObjectDoesNotExist:
         context['is_in_cart'] = False
+        cart = Cart.objects.get(cart_id=_get_session_id(request))
+        cart_items = CartItem.objects.filter(product=product, cart=cart)
+        if cart_items:
+            context['is_in_cart'] = True
+    except ObjectDoesNotExist:
+        pass
 
     return render(request, 'store/product_detail.html', context)
 

@@ -31,12 +31,14 @@ class Product(models.Model):
 
 class VariationManager(models.Manager):
 
+    def color(self):
+        return super(models.Manager, self).filter(variation_category='color')
+
+
     def size(self):
         return super(models.Manager, self).filter(variation_category='size')  # argument 1 for super must be type so,
         # sent models.manager insted of VariationManager
 
-    def color(self):
-        return super(models.Manager, self).filter(variation_category='color')
 
 variation_categories = (
     ('color', 'Color'),
