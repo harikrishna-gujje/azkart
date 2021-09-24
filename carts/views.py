@@ -5,12 +5,14 @@ from django.http import HttpResponse
 from store.models import Product, Variation
 from .models import Cart, CartItem
 
+
 # Create your views here.
 def _get_session_id(request):
     if request.session.session_key:
         return request.session.session_key
     else:
         return request.session.create()
+
 
 def create_or_increment_cart_item(product, cart, variations_for_product):
     if CartItem.objects.filter(product=product, cart=cart).exists():
@@ -24,9 +26,6 @@ def create_or_increment_cart_item(product, cart, variations_for_product):
             reverse_of_variations = [0, 1]
             reverse_of_variations[0], reverse_of_variations[1] = variations_for_product[1], variations_for_product[0]
             if (variations_for_product in existing_variations) or (reverse_of_variations in existing_variations):
-                print(existing_variations)
-                print(variations_for_product)
-                print(reverse_of_variations)
                 try:
                     index = existing_variations.index(variations_for_product)
                 except:
@@ -51,6 +50,7 @@ def create_or_increment_cart_item(product, cart, variations_for_product):
         cart_item.save()
     return
 
+
 def add_to_cart(request, product_id):
     product = Product.objects.get(id=product_id)
     variations_for_product = list()
@@ -70,9 +70,11 @@ def add_to_cart(request, product_id):
     create_or_increment_cart_item(product, cart, variations_for_product)
     return redirect('cart')
 
-def delete_or_decrement_cart_item(product, cart):
+
+def delete_or_decrement_cart_item(product, cart, cart_item_id):
     try:
-        cart_item = CartItem.objects.get(product=product, cart=cart)
+        cart_item = CartItem.objects.get(product=product, cart=cart, id=cart_item_id)
+        print(cart_item)
         if cart_item.quantity > 1:
             cart_item.quantity -= 1
             cart_item.save()
@@ -82,14 +84,16 @@ def delete_or_decrement_cart_item(product, cart):
         pass
     return
 
-def remove_from_cart(request, product_id):
+
+def remove_from_cart(request, product_id, cart_item_id):
     product = Product.objects.get(id=product_id)
     try:
         cart = Cart.objects.get(cart_id=_get_session_id(request))
     except ObjectDoesNotExist:
         cart = None
-    delete_or_decrement_cart_item(product, cart)
+    delete_or_decrement_cart_item(product, cart, cart_item_id)
     return redirect('cart')
+
 
 def cart(request):
     try:
