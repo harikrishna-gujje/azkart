@@ -40,7 +40,8 @@ class Account(AbstractBaseUser):
     last_name = models.CharField(max_length=255)
     username = models.CharField(max_length=255, unique=True)
     email = models.EmailField(max_length=255, unique=True)
-    phone_number = models.CharField(max_length=255, null=True) #this field is not asking due to not a required field, so added nullable True(can be empty)
+    phone_number = models.CharField(max_length=255, null=True)  # this field is not asking due to not a required field.
+    # So, added nullable True(can be empty)
 
     #required
     date_joined = models.DateTimeField(auto_now=True)
