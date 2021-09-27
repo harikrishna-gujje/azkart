@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.contrib import messages
 
 from .forms import RegistrationForm
 from .models import Account
@@ -19,6 +20,7 @@ def register(request):
             user = Account.objects.create_user(first_name=first_name, last_name=last_name, username=username,
                                                phone_number=phone_number, email=email, password=password)
             user.save()
+            messages.success(request, "Your registration is successful. Thank you!")
     else:
         form = RegistrationForm()
     context = {
