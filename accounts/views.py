@@ -1,5 +1,5 @@
-from django.shortcuts import render
-from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.contrib import messages, auth
 
 from .forms import RegistrationForm
 from .models import Account
@@ -30,4 +30,15 @@ def register(request):
 
 def login(request):
     context = dict()
-    render(request, 'accounts/login.html', context)
+    if request.method == 'POST':
+        email = request.POST['email']
+        password = request.POST['password']
+        user = auth.authenticate(email=email, password=password)
+        if user:
+            auth.login(request, user)
+            messages.success(request, 'Login Successful.')
+            return redirect('home')
+        else:
+            messages.error(request, 'Check your email or password!')
+
+    return render(request, 'accounts/login.html', context)
