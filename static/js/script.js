@@ -57,7 +57,3 @@ $(document).ready(function() {
     
 }); 
 // jquery end
-
-setTimeout(function(){
-    $('.alert').fadeOut('slow')
-}, 4000)
