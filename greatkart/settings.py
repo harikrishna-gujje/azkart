@@ -139,8 +139,8 @@ MESSAGE_TAGS = {
     messages.ERROR: 'danger',
 }
 
-SMTP_HOST = 'smtp.gmail.com'
-SMTP_PORT = 587
-SMTP_HOST_USER = 'darlingmahesh1729@gmail.com'
-SMTP_HOST_PASSWORD = 'jjM@963tTz@160998'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'darlingmahesh1729@gmail.com'
+EMAIL_HOST_PASSWORD = 'jjM@963tTz@160998'
 EMAIL_USE_TLS = True

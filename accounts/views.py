@@ -39,15 +39,18 @@ def register(request):
             encrypted_userid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
 
-            link = 'http://' + str(domain) + str(reverse('login')) + encrypted_userid + '/'+token
+            link = 'http://' + str(domain) + str(reverse('activate', kwargs={
+                'enc_userid': encrypted_userid,
+                'token': token
+            }))
             print(link)
             mail_subject = "Please verify your email for GreatKart Account"
             mail_body = render_to_string('accounts/mail_body.html', request=request, context={
                 'user': user,
                 'link': link
             })
-            mail = EmailMessage(mail_subject, mail_body, to=[email])
-            mail.send()
+            mail_instance = EmailMessage(subject=mail_subject, body=mail_body, to=[email])
+            mail_instance.send()
             messages.success(request, "Your registration is successful. Please check your email, Thank you!")
             return redirect('login')
     else:
