@@ -62,7 +62,20 @@ def register(request):
 
 
 def activate(request, enc_userid, token):
-    return HttpResponse('activating')
+    try:
+        user = Account.objects.get(pk=urlsafe_base64_decode(enc_userid))
+
+    except(ValueError, TypeError, OverflowError, Account.DoesNotExist):
+        user = None
+
+    if user and default_token_generator.check_token(user, token):
+        user.is_active = True
+        user.save()
+        messages.success(request, "Your account is activated!")
+        return redirect('login')
+    else:
+        messages.info(request, 'Please use the link sent to you only.')
+        return redirect('login')
 
 
 def login(request):
