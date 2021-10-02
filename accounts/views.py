@@ -68,13 +68,17 @@ def activate(request, enc_userid, token):
     except(ValueError, TypeError, OverflowError, Account.DoesNotExist):
         user = None
 
-    if user and default_token_generator.check_token(user, token):
-        user.is_active = True
-        user.save()
-        messages.success(request, "Your account is activated!")
-        return redirect('login')
+    if not user.is_active:
+        if user and default_token_generator.check_token(user, token):
+            user.is_active = True
+            user.save()
+            messages.success(request, "Your account is activated!")
+            return redirect('login')
+        else:
+            messages.info(request, 'Please use the link sent to you only.')
+            return redirect('login')
     else:
-        messages.info(request, 'Please use the link sent to you only.')
+        messages.info(request, 'Your account is already active. Please login to continue')
         return redirect('login')
 
 
@@ -87,8 +91,8 @@ def login(request):
         user = auth.authenticate(email=email, password=password)
         if user:
             auth.login(request, user)
-            #messages.success(request, 'Login Successful.')
-            return redirect('home')
+            messages.success(request, 'Hello ' + user.first_name.capitalize() + ' You are successfully logged in!')
+            return redirect('dashboard')
         else:
             messages.error(request, 'Check your email or password!')
             return redirect('login')
@@ -101,3 +105,9 @@ def logout(request):
     auth.logout(request)
     messages.success(request, 'You are logged out successfully!')
     return redirect('login')
+
+
+@login_required(login_url='login')
+def dashboard(request):
+    context = dict()
+    return render(request, 'accounts/dashboard.html', context)
