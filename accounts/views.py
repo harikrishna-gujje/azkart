@@ -43,7 +43,6 @@ def register(request):
                 'enc_userid': encrypted_userid,
                 'token': token
             }))
-            print(link)
             mail_subject = "Please verify your email for GreatKart Account"
             mail_body = render_to_string('accounts/mail_body.html', request=request, context={
                 'user': user,
@@ -111,3 +110,69 @@ def logout(request):
 def dashboard(request):
     context = dict()
     return render(request, 'accounts/dashboard.html', context)
+
+
+def forgot_password(request):
+    context = dict()
+    if request.method == 'POST':
+        email = request.POST['email']
+        if Account.objects.filter(email=email).exists():
+            user = Account.objects.get(email__exact=email)
+            # sending_reset_password_mail
+            # lets create a link which will contain domain, encrypted userid, token to verify
+            domain = get_current_site(request)
+            # base64 is used for numbers encrypted to string, use url_encrypt because it will exclude =,/,+
+            encrypted_userid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+
+            link = 'http://' + str(domain) + str(reverse('reset_password', kwargs={
+                'enc_userid': encrypted_userid,
+                'token': token
+            }))
+            mail_subject = "Reset your Password - GreatKart Account"
+            mail_body = render_to_string('accounts/reset_password_mail_body.html', request=request, context={
+                'user': user,
+                'link': link
+            })
+            mail_instance = EmailMessage(subject=mail_subject, body=mail_body, to=[email])
+            mail_instance.send()
+            messages.success(request, "Sent a link to reset your password. Please check your email, Thank you!")
+            return redirect('login')
+        else:
+            messages.error(request, "Account does not exists with the given email address")
+            return redirect('forgot_password')
+    return render(request, 'accounts/forgot_password.html', context)
+
+
+def reset_password(request, enc_userid, token):
+    if request.method == 'POST':
+        password = request.POST['password']
+        confirm_password = request.POST['confirm_password']
+        if password == confirm_password:
+            try:
+                user = Account.objects.get(pk=urlsafe_base64_decode(enc_userid))
+            except(ValueError, TypeError, OverflowError, Account.DoesNotExist):
+                user = None
+            if user and default_token_generator.check_token(user, token):
+                user.set_password(password)
+                user.save()
+                messages.info(request, 'Password changed successfully. Please login')
+                return redirect('login')
+            else:
+                messages.info(request, 'Please use the link sent to you only.')
+                return redirect('forgot_password')
+        else:
+            messages.error(request, 'Passwords do not match.')
+            return redirect('reset_password', enc_userid=enc_userid, token=token)
+
+    elif request.method == 'GET':
+        try:
+            user = Account.objects.get(pk=urlsafe_base64_decode(enc_userid))
+        except(ValueError, TypeError, OverflowError, Account.DoesNotExist):
+            user = None
+        if user and default_token_generator.check_token(user, token):
+            return render(request, 'accounts/reset_password.html')
+        else:
+            messages.info(request, 'Please use the link sent to you only.')
+            return redirect('forgot_password')
+    return redirect('forgot_password')
