@@ -13,6 +13,8 @@ from django.core.mail import EmailMessage
 
 from .forms import RegistrationForm
 from .models import Account
+from carts.models import Cart, CartItem
+from carts.views import _get_session_id
 
 # Create your views here.
 
@@ -88,7 +90,19 @@ def login(request):
         password = request.POST['password']
 
         user = auth.authenticate(email=email, password=password)
-        if user:
+        if user is not None:
+            # lets get the cart_items if there are any before logging the user in. So, we can add them to user session.
+            try:
+                # if there are any products are there in cart, we are assigning the user to the cart_item
+                cart = Cart.objects.get(cart_id=_get_session_id(request))
+                if CartItem.objects.filter(cart=cart).exists():
+                    cart_items = CartItem.objects.filter(cart=cart)
+                    # if there are any products then we will assign them to user
+                    for cart_item in cart_items:
+                        cart_item.user = user
+                        cart_item.save()
+            except Exception as e:
+                pass
             auth.login(request, user)
             messages.success(request, 'Hello ' + user.first_name.capitalize() + ' You are successfully logged in!')
             return redirect('dashboard')

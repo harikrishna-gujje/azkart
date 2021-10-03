@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
 
 from store.models import Product, Variation
 from .models import Cart, CartItem
@@ -15,6 +16,7 @@ def _get_session_id(request):
 
 
 def create_or_increment_cart_item(product, cart, variations_for_product):
+    """ to create a new cart_item or to increment if it exists"""
     if CartItem.objects.filter(product=product, cart=cart).exists():
         cart_items = CartItem.objects.filter(product=product, cart=cart)  # cart items of same prod with diff variations
         existing_variations = list()
@@ -99,10 +101,39 @@ def remove_cart_item_from_cart(request, cart_item_id):
     cart_item.delete()
     return redirect('cart')
 
+
 def cart(request):
+    if request.user.is_authenticated:
+        cart_items = CartItem.objects.filter(user=request.user, is_active=True)
+        total = 0
+        for cart_item in cart_items:
+            total += cart_item.total()
+    else:
+        try:
+            cart = Cart.objects.get(cart_id=_get_session_id(request))
+            cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+            total = 0
+            for cart_item in cart_items:
+                total += cart_item.total()
+
+        except ObjectDoesNotExist:
+            cart_items = dict()
+            total = 0
+
+    context = {
+        'cart_items': cart_items,
+        'total': total,
+        'tax': total*0.03,
+        'grand_total': total+total*0.03
+    }
+    return render(request, 'store/cart.html', context)
+
+
+@login_required(login_url='login')
+def checkout(request):
     try:
-        cart = Cart.objects.get(cart_id=_get_session_id(request))
-        cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+        # you have to login to reach this.
+        cart_items = CartItem.objects.filter(user=request.user, is_active=True)
         total = 0
         for cart_item in cart_items:
             total += cart_item.total()
@@ -114,7 +145,7 @@ def cart(request):
     context = {
         'cart_items': cart_items,
         'total': total,
-        'tax': total*0.03,
-        'grand_total': total+total*0.03
+        'tax': total * 0.03,
+        'grand_total': total + total * 0.03
     }
-    return render(request, 'store/cart.html', context)
+    return render(request, 'store/checkout.html', context)
