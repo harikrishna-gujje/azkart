@@ -18,7 +18,8 @@
 		<div class="card">
 			<div class="card-body">
 				<h4 class="card-title mb-4">Billing Address</h4>
-				<form action="#" class="form">
+				<form action="#" method="POST">
+					{% csrf_token %}
 					<div class="form-row">
 						<div class="col form-group">
 							<label for="">First Name:</label>
@@ -105,9 +106,7 @@
 					<td>
 						<!-- col.// -->
 									<div class="col">
-										<div class="input-group input-spinner">
-											{{cart_item.quantity}}
-										</div>
+										<label for="">{{cart_item.quantity}}</label>
 									</div> <!-- col.// -->
 					</td>
 					<td>
@@ -124,9 +123,9 @@
 				<img src="{% static './images/misc/payments.png' %}" height="26">
 			</p>
 <!--			<a href="./place-order.html" class="btn btn-primary btn-block"> Place Order </a>-->
-			<button type="submit" class="btn btn-primary btn-block">Place Order</button>
-			</form>
+			<button type="submit" name="submit" class="btn btn-primary btn-block">Place Order</button>
 			<a href="{% url 'store' %}" class="btn btn-light btn-block">Continue Shopping</a>
+			</form>
 		</div> <!-- card-body.// -->
 		</div> <!-- card.// -->
 

@@ -15,6 +15,44 @@ def _get_session_id(request):
         return request.session.create()
 
 
+def create_or_increment_cart_item_for_user(product, user, variations_for_product):
+    """ to create a new cart_item or to increment if it exists for the current user"""
+    if CartItem.objects.filter(product=product, user=user).exists():
+        cart_items = CartItem.objects.filter(product=product, user=user)  # cart items of same prod with diff variations
+        existing_variations = list()
+        cart_ids = list()
+        if len(variations_for_product) > 0:
+            for cart_item in cart_items:
+                existing_variations.append(list(cart_item.variations_for_product.all()))
+                cart_ids.append(cart_item.id)
+            reverse_of_variations = [0, 1]
+            reverse_of_variations[0], reverse_of_variations[1] = variations_for_product[1], variations_for_product[0]
+            if (variations_for_product in existing_variations) or (reverse_of_variations in existing_variations):
+                try:
+                    index = existing_variations.index(variations_for_product)
+                except:
+                    index = existing_variations.index(reverse_of_variations)
+                cartitem_id_of_existing_product = cart_ids[index]
+                cart_item = CartItem.objects.get(id=cartitem_id_of_existing_product)
+                cart_item.quantity += 1
+                cart_item.save()
+                return
+            else:
+                cart_item = CartItem.objects.create(product=product, user=user, quantity=1)
+                if len(variations_for_product) > 0:
+                    for variation in variations_for_product:
+                        cart_item.variations_for_product.add(variation)
+                cart_item.save()
+
+    else:
+        cart_item = CartItem.objects.create(product=product, user=user, quantity=1)
+        if variations_for_product:
+            for variation in variations_for_product:
+                cart_item.variations_for_product.add(variation)
+        cart_item.save()
+    return
+
+
 def create_or_increment_cart_item(product, cart, variations_for_product):
     """ to create a new cart_item or to increment if it exists"""
     if CartItem.objects.filter(product=product, cart=cart).exists():
@@ -64,18 +102,21 @@ def add_to_cart(request, product_id):
                 # we only have to add it to the cart item so, making a field in cart item model to store variations.
             except ObjectDoesNotExist:
                 pass
-    try:
-        cart = Cart.objects.get(cart_id=_get_session_id(request))
-    except ObjectDoesNotExist:
-        cart = Cart.objects.create(cart_id=_get_session_id(request))
-        cart.save()
-    create_or_increment_cart_item(product, cart, variations_for_product)
+    if request.user.is_authenticated:
+        create_or_increment_cart_item_for_user(product, request.user, variations_for_product)
+    else:
+        try:
+            cart = Cart.objects.get(cart_id=_get_session_id(request))
+        except ObjectDoesNotExist:
+            cart = Cart.objects.create(cart_id=_get_session_id(request))
+            cart.save()
+        create_or_increment_cart_item(product, cart, variations_for_product)
     return redirect('cart')
 
 
-def delete_or_decrement_cart_item(product, cart, cart_item_id):
+def delete_or_decrement_cart_item(product, cart_item_id):
     try:
-        cart_item = CartItem.objects.get(product=product, cart=cart, id=cart_item_id)
+        cart_item = CartItem.objects.get(product=product, id=cart_item_id)
         if cart_item.quantity > 1:
             cart_item.quantity -= 1
             cart_item.save()
@@ -88,11 +129,7 @@ def delete_or_decrement_cart_item(product, cart, cart_item_id):
 
 def remove_from_cart(request, product_id, cart_item_id):
     product = Product.objects.get(id=product_id)
-    try:
-        cart = Cart.objects.get(cart_id=_get_session_id(request))
-    except ObjectDoesNotExist:
-        cart = None
-    delete_or_decrement_cart_item(product, cart, cart_item_id)
+    delete_or_decrement_cart_item(product, cart_item_id)
     return redirect('cart')
 
 
